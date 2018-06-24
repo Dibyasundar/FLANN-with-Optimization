@@ -1,0 +1,129 @@
+clear;
+clc;
+close all;
+Nc=input('enter size of hidden layer node :');
+ps=input('Enter the population size :');
+k=input('maximum number of itertation :');
+ph1=input('Enter the acceleration coeffecient :');
+ph2=input('Enter the acceleration coeffecient :');
+[data,label]=xlsread('ddata.xlsx');
+input=data(:,1:size(data,2)-1);
+output=data(:,size(data,2));
+clear data label;
+input(:,size(input,2)+1)=1;
+train_input=input(1:uint32(size(input,1)/2),:);
+train_output=output(1:uint32(size(output,1)/2),:);
+test_input=input(uint32(size(input,1)/2)+1:size(input,1),:);
+test_output=output(uint32(size(output,1)/2)+1:size(output,1),:);
+N=size(train_input,2);
+m=size(train_input,1);
+
+for j=1:ps
+for i=1:Nc
+    w(:,i)=rand(1,N)'.*0.000001;
+end
+pop{j}=w;
+end
+
+for j=1:ps
+for i=1:Nc
+    w(:,i)=rand(1,N)'.*0.000001;
+end
+vel{j}=w;
+end
+
+for i=1:ps
+    obj_val(i,:)=obj( pop{i},train_input,train_output,test_input,test_output,Nc,0 );
+end
+p=pop;
+iter=1;
+while iter<=k
+    g_best=1;
+    for i=1:ps
+        if(obj_val(i,1)<obj_val(g_best,1))
+            g_best=i;
+        end
+    end
+    for i=1:ps
+        if(i~=g_best)
+            vel{i}=vel{i}+(ph1.*rand().*(p{i}-pop{i}))+(ph2.*rand().*(pop{g_best}-pop{i}));
+            pop{i}=pop{i}+vel{i};
+            old_obj=obj_val(i,:);
+            fun_val_n=eqng1(pop(i,:));
+            con_val_n=consg1(pop(i,:));
+            eq_con_val_n=eqcong1(pop(i,:));
+            con_val_n(con_val_n<0)=0;
+            eq_con_val_n=abs(eq_con_val_n);
+            obj_val(i,:)=fun_val_n+100.*(sum(con_val_n'.^2))'+64.*(sum(eq_con_val_n'.^2))';
+            if(obj_val(i,:)<old_obj)
+                p(i,:)=pop(i,:);
+            end
+        end
+    end
+    iter=iter+1;
+end
+disp(pop(g_best,:));
+disp(eqng1(pop(g_best,:)));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+iter=1;
+while iter<=k
+    g_best=1;
+    for i=1:ps
+        if(obj_val(i,1)<obj_val(g_best,1))
+            g_best=i;
+        end
+    end
+    g_worst=1;
+    for i=1:ps
+        if(obj_val(i,1)>obj_val(g_worst,1))
+            g_worst=i;
+        end
+    end
+    p_best=pop{g_best};
+    p_worst=pop{g_worst};
+    for i=1:ps
+        npop=pop{i}+(rand(size(pop{i})).*(p_best-abs(pop{i})))-(rand(size(pop{i})).*(p_worst-abs(pop{i})));
+        val=obj( npop,train_input,train_output,test_input,test_output,Nc,0);
+        if val<obj_val(i,:)
+            pop{i}=npop;
+            obj_val(i,:)=val;
+        end
+        
+    end
+    plot_var(iter)=obj_val(g_best,:);
+%     pop
+    iter=iter+1;
+end
+g_best=1;
+    for i=1:ps
+        if(obj_val(i,1)<obj_val(g_best,1))
+            g_best=i;
+        end
+    end
+val=obj( pop{g_best},train_input,train_output,test_input,test_output,Nc,1);
+figure;plot(plot_var);
